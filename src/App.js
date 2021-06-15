@@ -15,11 +15,14 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  InputRightElement,
   Grid,
   GridItem,
   Flex,
+  Heading,
+  Text,
 } from "@chakra-ui/react";
-import { FaSeedling, FaSearch } from "react-icons/fa";
+import { FaSeedling, FaSearch, FaTimesCircle } from "react-icons/fa";
 
 const db = firebase.firestore();
 
@@ -70,6 +73,25 @@ const reducer = produce((state, action) => {
       state.filter = action.payload;
       return state;
     }
+
+    case "select_all_players": {
+      action.payload.forEach((p) => {
+        const player = state.players.find((pl) => pl.id === p.id);
+        player.checked = true;
+      });
+
+      return state;
+    }
+
+    case "deselect_all_players": {
+      action.payload.forEach((p) => {
+        const player = state.players.find((pl) => pl.id === p.id);
+        player.checked = false;
+      });
+
+      return state;
+    }
+
     default: {
       return state;
     }
@@ -84,7 +106,11 @@ const useStorageReducer = (reducer, defaultState) => {
   );
 
   useEffect(() => {
-    const savableState = { players: state.players, matches: [] };
+    const savableState = {
+      players: state.players,
+      matches: [],
+      filter: state.filter,
+    };
     localStorage.setItem("state", JSON.stringify(savableState));
   }, [state]);
 
@@ -109,6 +135,7 @@ const AddPlayer = ({ type, onSubmit }) => {
           placeholder={`${type} name`}
           value={name}
           onChange={(e) => setName(e.target.value)}
+          background="white"
         />
       </GridItem>
       <GridItem colSpan={2}>
@@ -119,6 +146,7 @@ const AddPlayer = ({ type, onSubmit }) => {
           min="0"
           value={rank}
           onChange={(e) => setRank(Number(e.target.value))}
+          background="white"
         />
       </GridItem>
       <GridItem>
@@ -173,6 +201,7 @@ export default function App() {
       players: [],
       matches: [],
       showRankings: false,
+      filter: "",
     });
 
   useEffect(() => {
@@ -188,98 +217,258 @@ export default function App() {
     });
   }, [players.length, dispatch]);
 
+  const filteredPlayers = filterPlayers(filter, players);
+  const selectedPlayers = players.filter((p) => p.checked);
+
   return (
     <ChakraProvider>
-      <div className="App">
-        <Stack spacing={4} padding={4}>
-          <Stack spacing={8}>
-            <Box>
-              <Button
-                width="100%"
-                onClick={() => {
-                  const teams = makeTeams(shuffle(players), 1, 1);
-                  dispatch({
-                    type: "new_matches",
-                    payload: teams,
-                  });
-
-                  saveMatchesHistory(teams);
-                }}
-              >
-                Generate Best on Best Teams
-              </Button>
-            </Box>
-            <Box>
-              <Button
-                width="100%"
-                onClick={() => {
-                  const teams = makeTeams(shuffle(players), 0.5, 0.5);
-                  dispatch({
-                    type: "new_matches",
-                    payload: teams,
-                  });
-                }}
-              >
-                Generate upto 50% threshold Teams
-              </Button>
-            </Box>
-            <Box>
-              <Button
-                width="100%"
-                onClick={() => {
-                  const teams = makeTeams(
-                    [...players].sort((a, b) => b.rank - a.rank),
-                    0,
-                    1
-                  );
-                  dispatch({
-                    type: "new_matches",
-                    payload: teams,
-                  });
-                }}
-              >
-                Generate upto 100% threshold teams
-              </Button>
-            </Box>
-          </Stack>
-          <Stack direction="column" spacing={4} padding={4}>
-            {matches.map((match, i) => (
-              <Box
-                border="1px solid"
-                borderColor="gray.300"
-                borderRadius="5px"
-                key={`match-${i}`}
-                paddingBottom={4}
-              >
-                <Stack spacing={4}>
-                  <Flex
-                    as="h3"
-                    padding={2}
-                    borderBottom="1px solid"
-                    borderColor="gray.300"
-                    background="#ffdac1"
-                    justifyContent="center"
-                    borderTopRadius="5px"
-                  >
-                    Group {i + 1}
-                  </Flex>
-                  <Stack alignItems="center">
-                    {match.map((player = {}, i) => (
-                      <Stack key={player.id} direction="row">
-                        {i === 0 ? (
-                          <Box as={FaSeedling} color="green.300" />
-                        ) : (
-                          <Box />
-                        )}
-                        <Box>{player.name}</Box>
-                      </Stack>
-                    ))}
-                  </Stack>
-                </Stack>
-              </Box>
-            ))}
-          </Stack>
+      <Box color="gray.500">
+        <div className="App">
           <Stack spacing={4}>
+            <Stack spacing={8} padding={4} paddingBottom={0}>
+              <Box>
+                <Button
+                  width="100%"
+                  onClick={() => {
+                    const teams = makeTeams(shuffle(players), 1, 1);
+                    dispatch({
+                      type: "new_matches",
+                      payload: teams,
+                    });
+
+                    saveMatchesHistory(teams);
+                  }}
+                >
+                  Organise equal matches
+                </Button>
+              </Box>
+              <Box>
+                <Button
+                  width="100%"
+                  onClick={() => {
+                    const teams = makeTeams(shuffle(players), 0.5, 0.5);
+                    dispatch({
+                      type: "new_matches",
+                      payload: teams,
+                    });
+                  }}
+                >
+                  Organise 50% leeway matches
+                </Button>
+              </Box>
+              <Box>
+                <Button
+                  width="100%"
+                  onClick={() => {
+                    const teams = makeTeams(
+                      [...players].sort((a, b) => b.rank - a.rank),
+                      0,
+                      1
+                    );
+                    dispatch({
+                      type: "new_matches",
+                      payload: teams,
+                    });
+                  }}
+                >
+                  Organise random matches
+                </Button>
+              </Box>
+            </Stack>
+            <Stack direction="column" spacing={4} padding={4} paddingTop={0}>
+              {matches.map((match, i) => (
+                <Box
+                  border="1px solid"
+                  borderColor="gray.300"
+                  borderRadius="5px"
+                  key={`match-${i}`}
+                  paddingBottom={4}
+                >
+                  <Stack spacing={4}>
+                    <Flex
+                      as="h3"
+                      padding={2}
+                      borderBottom="1px solid"
+                      borderColor="gray.300"
+                      background="#ffdac1"
+                      justifyContent="center"
+                      borderTopRadius="5px"
+                    >
+                      Group {i + 1}
+                    </Flex>
+                    <Stack alignItems="center">
+                      {match.map((player = {}, i) => (
+                        <Stack key={player.id} direction="row">
+                          {i === 0 ? (
+                            <Box as={FaSeedling} color="green.300" />
+                          ) : (
+                            <Box />
+                          )}
+                          <Box>{player.name}</Box>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+            <Stack>
+              <Heading size="md">Add new player</Heading>
+              <Text fontSize="sm">
+                (Guest players will not be saved for future sessions)
+              </Text>
+
+              <Stack
+                spacing={4}
+                padding={2}
+                paddingTop={4}
+                paddingBottom={4}
+                background="green.300"
+              >
+                <Grid templateColumns="repeat(5, 1fr)" color="white">
+                  <GridItem colSpan={2}>Name</GridItem>
+                  <GridItem colSpan={2}>Rank</GridItem>
+                </Grid>
+                <AddPlayer
+                  type="Guest"
+                  onSubmit={(name, rank) => {
+                    dispatch({
+                      type: "add_player",
+                      payload: {
+                        name: `${name} (Guest)`,
+                        rank,
+                        mode: "guest",
+                        id: randomId(),
+                      },
+                    });
+                  }}
+                />
+                <AddPlayer
+                  type="Member"
+                  onSubmit={(name, rank) => {
+                    db.collection("players")
+                      .add({
+                        name,
+                        rank,
+                      })
+                      .then((snap) => {
+                        dispatch({
+                          type: "add_player",
+                          payload: { name: `${name}`, rank, id: snap.id },
+                        });
+                      });
+                  }}
+                />
+              </Stack>
+            </Stack>
+            <Box>Session player count: {selectedPlayers.length} </Box>
+            <Box padding={4}>
+              <InputGroup>
+                <InputLeftElement
+                  pointerEvents="none"
+                  children={<Box as={FaSearch} color="gray.300" />}
+                />
+                <Input
+                  placeholder="Filter players"
+                  value={filter}
+                  onChange={(e) => {
+                    dispatch({
+                      type: "player_filter_type",
+                      payload: e.target.value,
+                    });
+                  }}
+                />
+                {filter ? (
+                  <InputRightElement
+                    children={<Box as={FaTimesCircle} color="gray.300" />}
+                    onClick={() => {
+                      dispatch({
+                        type: "player_filter_type",
+                        payload: "",
+                      });
+                    }}
+                  />
+                ) : null}
+              </InputGroup>
+            </Box>
+            <Stack>
+              <Button
+                onClick={() => {
+                  dispatch({
+                    type: "select_all_players",
+                    payload: filteredPlayers,
+                  });
+                }}
+              >
+                Select all ({filteredPlayers.length})
+              </Button>
+              <Button
+                onClick={() => {
+                  dispatch({
+                    type: "deselect_all_players",
+                    payload: filteredPlayers,
+                  });
+                }}
+              >
+                Deselect all ({filteredPlayers.filter((p) => p.checked).length})
+              </Button>
+            </Stack>
+            <SimpleGrid columns={1} spacing={4}>
+              {filteredPlayers.map((p, i) => (
+                <Grid
+                  key={p.id}
+                  as={FormControl}
+                  templateColumns="repeat(5, 1fr)"
+                  gap={2}
+                  padding={2}
+                  _hover={{ backgroundColor: "gray.100" }}
+                >
+                  <GridItem colSpan={1}>
+                    <Switch
+                      id={`switch-${p.id}`}
+                      isChecked={p.checked || false}
+                      size="lg"
+                      onChange={() => {
+                        dispatch({
+                          type: "select_player",
+                          payload: {
+                            player: p,
+                            index: i,
+                          },
+                        });
+                      }}
+                    />
+                  </GridItem>
+                  <GridItem colSpan={3}>
+                    <FormLabel htmlFor={`switch-${p.id}`}>{p.name}</FormLabel>
+                  </GridItem>
+                  {showRankings ? (
+                    <GridItem>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={p.rank}
+                        onChange={(e) => {
+                          dispatch({
+                            type: "update_player",
+                            payload: {
+                              id: p.id,
+                              rank: Number(e.target.value),
+                            },
+                          });
+                        }}
+                        onBlur={() => {
+                          db.collection("players").doc(p.id).update({
+                            rank: p.rank,
+                          });
+                        }}
+                      />
+                    </GridItem>
+                  ) : null}
+                </Grid>
+              ))}
+            </SimpleGrid>
             <Button
               onClick={() => {
                 getPlayers().then((players) => {
@@ -292,122 +481,18 @@ export default function App() {
             >
               Reset Players
             </Button>
-            <AddPlayer
-              type="Guest"
-              onSubmit={(name, rank) => {
+            <Box
+              onClick={() => {
                 dispatch({
-                  type: "add_player",
-                  payload: {
-                    name: `${name} (Guest)`,
-                    rank,
-                    mode: "guest",
-                    id: randomId(),
-                  },
+                  type: "toggle_show_ranking",
                 });
               }}
-            />
-            <AddPlayer
-              type="Player"
-              onSubmit={(name, rank) => {
-                db.collection("players")
-                  .add({
-                    name,
-                    rank,
-                  })
-                  .then((snap) => {
-                    dispatch({
-                      type: "add_player",
-                      payload: { name: `${name}`, rank, id: snap.id },
-                    });
-                  });
-              }}
-            />
+            >
+              Show rankings
+            </Box>
           </Stack>
-          <Box
-            onClick={() => {
-              dispatch({
-                type: "toggle_show_ranking",
-              });
-            }}
-          >
-            Show rankings
-          </Box>
-          <Box>
-            <InputGroup>
-              <InputLeftElement
-                pointerEvents="none"
-                children={<Box as={FaSearch} color="gray.300" />}
-              />
-              <Input
-                placeholder="Filter players"
-                value={filter}
-                onChange={(e) => {
-                  dispatch({
-                    type: "player_filter_type",
-                    payload: e.target.value,
-                  });
-                }}
-              />
-            </InputGroup>
-          </Box>
-          <SimpleGrid columns={1} spacing={4}>
-            {filterPlayers(filter, players).map((p, i) => (
-              <Grid
-                key={p.id}
-                as={FormControl}
-                templateColumns="repeat(5, 1fr)"
-                gap={2}
-                padding={2}
-                _hover={{ backgroundColor: "gray.100" }}
-              >
-                <GridItem colSpan={1}>
-                  <Switch
-                    id={`switch-${p.id}`}
-                    isChecked={p.checked || false}
-                    size="lg"
-                    onChange={() => {
-                      dispatch({
-                        type: "select_player",
-                        payload: {
-                          player: p,
-                          index: i,
-                        },
-                      });
-                    }}
-                  />
-                </GridItem>
-                <GridItem colSpan={3}>
-                  <FormLabel htmlFor={`switch-${p.id}`}>{p.name}</FormLabel>
-                </GridItem>
-                {showRankings ? (
-                  <GridItem>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={p.rank}
-                      onChange={(e) => {
-                        dispatch({
-                          type: "update_player",
-                          payload: {
-                            id: p.id,
-                            rank: Number(e.target.value),
-                          },
-                        });
-                      }}
-                      onBlur={() => {
-                        db.collection("players").doc(p.id).update({
-                          rank: p.rank,
-                        });
-                      }}
-                    />
-                  </GridItem>
-                ) : null}
-              </Grid>
-            ))}
-          </SimpleGrid>
-        </Stack>
-      </div>
+        </div>
+      </Box>
     </ChakraProvider>
   );
 }
