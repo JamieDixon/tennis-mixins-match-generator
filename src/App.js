@@ -22,14 +22,16 @@ const db = firebase.firestore();
 const reducer = produce((state, action) => {
   switch (action.type) {
     case "add_player": {
-      state.players.push({
+      state.players.unshift({
         name: action.payload.name,
         rank: action.payload.rank
       });
       return state;
     }
     case "players_loaded": {
-      state.players = action.payload;
+      state.players = [...action.payload].sort((p1, p2) =>
+        p1.name < p2.name ? -1 : 1
+      );
       return state;
     }
     case "new_matches": {
@@ -49,14 +51,15 @@ const reducer = produce((state, action) => {
 });
 
 const useStorageReducer = (reducer, defaultState) => {
-  const localState = localStorage.getItem("bob");
+  const localState = localStorage.getItem("state");
   const [state, dispatch] = useReducer(
     reducer,
     localState ? JSON.parse(localState) : defaultState
   );
 
   useEffect(() => {
-    localStorage.setItem("state", JSON.stringify(state));
+    const savableState = { players: state.players, matches: [] };
+    localStorage.setItem("state", JSON.stringify(savableState));
   }, [state]);
 
   return [state, dispatch];
@@ -107,6 +110,26 @@ const AddPlayer = ({ type, onSubmit }) => {
     </Grid>
   );
 };
+
+const saveMatchesHistory = (matches) => {
+  const savableMatches = matches.reduce((agg, match, i) => {
+    return {
+      ...agg,
+      [`group_${i + 1}`]: match
+        .filter((x) => x)
+        .map((p) => ({
+          player: db.collection("players").doc(p.id),
+          name: p.name,
+          rank: p.rank
+        }))
+    };
+  }, {});
+
+  return db.collection("history").add({
+    timestamp: new Date(),
+    matches: savableMatches
+  });
+};
 export default function App() {
   const [{ matches, players }, dispatch] = useStorageReducer(reducer, {
     players: [],
@@ -140,6 +163,8 @@ export default function App() {
                     type: "new_matches",
                     payload: teams
                   });
+
+                  saveMatchesHistory(teams);
                 }}
               >
                 Generate Best on Best Teams
@@ -185,6 +210,7 @@ export default function App() {
                 border="1px solid"
                 borderColor="gray.300"
                 borderRadius="5px"
+                key={`match-${i}`}
               >
                 <Stack spacing={4}>
                   <Box
@@ -197,7 +223,7 @@ export default function App() {
                   </Box>
                   <Box>
                     {match.map((player = {}) => (
-                      <p>{player.name}</p>
+                      <p key={player.id}>{player.name}</p>
                     ))}
                   </Box>
                 </Stack>
@@ -246,6 +272,7 @@ export default function App() {
           <SimpleGrid columns={1} spacing={4}>
             {players.map((p, i) => (
               <Grid
+                key={p.id}
                 as={FormControl}
                 templateColumns="repeat(5, 1fr)"
                 gap={2}
@@ -272,7 +299,7 @@ export default function App() {
                   <FormLabel htmlFor={`switch-${p.id}`}>{p.name}</FormLabel>
                 </GridItem>
                 <GridItem>
-                  <Input value={p.rank} />
+                  <Input value={p.rank} onChange={() => {}} />
                 </GridItem>
               </Grid>
             ))}
