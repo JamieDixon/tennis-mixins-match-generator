@@ -13,10 +13,13 @@ import {
   FormControl,
   Button,
   Input,
+  InputGroup,
+  InputLeftElement,
   Grid,
   GridItem,
   Flex,
 } from "@chakra-ui/react";
+import { FaSeedling, FaSearch } from "react-icons/fa";
 
 const db = firebase.firestore();
 
@@ -61,6 +64,10 @@ const reducer = produce((state, action) => {
       );
       const newPlayer = { ...state.players[playerIndex], ...rest };
       state.players[playerIndex] = newPlayer;
+      return state;
+    }
+    case "player_filter_type": {
+      state.filter = action.payload;
       return state;
     }
     default: {
@@ -149,15 +156,24 @@ const saveMatchesHistory = (matches) => {
     matches: savableMatches,
   });
 };
+
+const filterPlayers = (filter, players) => {
+  if (!filter) {
+    return players;
+  }
+
+  return players.filter((p) =>
+    p.name.toLowerCase().includes(filter.toLowerCase())
+  );
+};
+
 export default function App() {
-  const [{ matches, players, showRankings }, dispatch] = useStorageReducer(
-    reducer,
-    {
+  const [{ matches, players, showRankings, filter }, dispatch] =
+    useStorageReducer(reducer, {
       players: [],
       matches: [],
       showRankings: false,
-    }
-  );
+    });
 
   useEffect(() => {
     if (players.length) {
@@ -247,11 +263,18 @@ export default function App() {
                   >
                     Group {i + 1}
                   </Flex>
-                  <Box>
-                    {match.map((player = {}) => (
-                      <p key={player.id}>{player.name}</p>
+                  <Stack alignItems="center">
+                    {match.map((player = {}, i) => (
+                      <Stack key={player.id} direction="row">
+                        {i === 0 ? (
+                          <Box as={FaSeedling} color="green.300" />
+                        ) : (
+                          <Box />
+                        )}
+                        <Box>{player.name}</Box>
+                      </Stack>
                     ))}
-                  </Box>
+                  </Stack>
                 </Stack>
               </Box>
             ))}
@@ -309,8 +332,26 @@ export default function App() {
           >
             Show rankings
           </Box>
+          <Box>
+            <InputGroup>
+              <InputLeftElement
+                pointerEvents="none"
+                children={<Box as={FaSearch} color="gray.300" />}
+              />
+              <Input
+                placeholder="Filter players"
+                value={filter}
+                onChange={(e) => {
+                  dispatch({
+                    type: "player_filter_type",
+                    payload: e.target.value,
+                  });
+                }}
+              />
+            </InputGroup>
+          </Box>
           <SimpleGrid columns={1} spacing={4}>
-            {players.map((p, i) => (
+            {filterPlayers(filter, players).map((p, i) => (
               <Grid
                 key={p.id}
                 as={FormControl}
