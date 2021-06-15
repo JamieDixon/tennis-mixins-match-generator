@@ -14,17 +14,22 @@ import {
   Button,
   Input,
   Grid,
-  GridItem
+  GridItem,
+  Flex,
 } from "@chakra-ui/react";
 
 const db = firebase.firestore();
 
+const randomId = () => Math.random().toString(36).substr(2, 9);
+
 const reducer = produce((state, action) => {
   switch (action.type) {
     case "add_player": {
+      const { id, name, rank } = action.payload;
       state.players.unshift({
-        name: action.payload.name,
-        rank: action.payload.rank
+        id,
+        name,
+        rank,
       });
       return state;
     }
@@ -39,11 +44,25 @@ const reducer = produce((state, action) => {
       return state;
     }
     case "select_player": {
-      const player = state.players[action.payload.index];
+      const player = state.players.find(
+        (p) => p.id === action.payload.player.id
+      );
       player.checked = !player.checked;
       return state;
     }
-
+    case "toggle_show_ranking": {
+      state.showRankings = !state.showRankings;
+      return state;
+    }
+    case "update_player": {
+      const { id, ...rest } = action.payload;
+      const playerIndex = state.players.findIndex(
+        (p) => p.id === action.payload.id
+      );
+      const newPlayer = { ...state.players[playerIndex], ...rest };
+      state.players[playerIndex] = newPlayer;
+      return state;
+    }
     default: {
       return state;
     }
@@ -120,21 +139,25 @@ const saveMatchesHistory = (matches) => {
         .map((p) => ({
           player: db.collection("players").doc(p.id),
           name: p.name,
-          rank: p.rank
-        }))
+          rank: p.rank,
+        })),
     };
   }, {});
 
   return db.collection("history").add({
     timestamp: new Date(),
-    matches: savableMatches
+    matches: savableMatches,
   });
 };
 export default function App() {
-  const [{ matches, players }, dispatch] = useStorageReducer(reducer, {
-    players: [],
-    matches: []
-  });
+  const [{ matches, players, showRankings }, dispatch] = useStorageReducer(
+    reducer,
+    {
+      players: [],
+      matches: [],
+      showRankings: false,
+    }
+  );
 
   useEffect(() => {
     if (players.length) {
@@ -144,7 +167,7 @@ export default function App() {
     getPlayers().then((players) => {
       dispatch({
         type: "players_loaded",
-        payload: players
+        payload: players,
       });
     });
   }, [players.length, dispatch]);
@@ -153,7 +176,7 @@ export default function App() {
     <ChakraProvider>
       <div className="App">
         <Stack spacing={4} padding={4}>
-          <Stack>
+          <Stack spacing={8}>
             <Box>
               <Button
                 width="100%"
@@ -161,7 +184,7 @@ export default function App() {
                   const teams = makeTeams(shuffle(players), 1, 1);
                   dispatch({
                     type: "new_matches",
-                    payload: teams
+                    payload: teams,
                   });
 
                   saveMatchesHistory(teams);
@@ -177,7 +200,7 @@ export default function App() {
                   const teams = makeTeams(shuffle(players), 0.5, 0.5);
                   dispatch({
                     type: "new_matches",
-                    payload: teams
+                    payload: teams,
                   });
                 }}
               >
@@ -195,7 +218,7 @@ export default function App() {
                   );
                   dispatch({
                     type: "new_matches",
-                    payload: teams
+                    payload: teams,
                   });
                 }}
               >
@@ -206,21 +229,24 @@ export default function App() {
           <Stack direction="column" spacing={4} padding={4}>
             {matches.map((match, i) => (
               <Box
-                padding={4}
                 border="1px solid"
                 borderColor="gray.300"
                 borderRadius="5px"
                 key={`match-${i}`}
+                paddingBottom={4}
               >
                 <Stack spacing={4}>
-                  <Box
+                  <Flex
                     as="h3"
-                    paddingBottom={4}
+                    padding={2}
                     borderBottom="1px solid"
                     borderColor="gray.300"
+                    background="#ffdac1"
+                    justifyContent="center"
+                    borderTopRadius="5px"
                   >
                     Group {i + 1}
-                  </Box>
+                  </Flex>
                   <Box>
                     {match.map((player = {}) => (
                       <p key={player.id}>{player.name}</p>
@@ -236,7 +262,7 @@ export default function App() {
                 getPlayers().then((players) => {
                   dispatch({
                     type: "players_loaded",
-                    payload: players
+                    payload: players,
                   });
                 });
               }}
@@ -248,7 +274,12 @@ export default function App() {
               onSubmit={(name, rank) => {
                 dispatch({
                   type: "add_player",
-                  payload: { name: `${name} (Guest)`, rank, mode: "guest" }
+                  payload: {
+                    name: `${name} (Guest)`,
+                    rank,
+                    mode: "guest",
+                    id: randomId(),
+                  },
                 });
               }}
             />
@@ -258,17 +289,26 @@ export default function App() {
                 db.collection("players")
                   .add({
                     name,
-                    rank
+                    rank,
                   })
-                  .then(() => {
+                  .then((snap) => {
                     dispatch({
                       type: "add_player",
-                      payload: { name: `${name}`, rank }
+                      payload: { name: `${name}`, rank, id: snap.id },
                     });
                   });
               }}
             />
           </Stack>
+          <Box
+            onClick={() => {
+              dispatch({
+                type: "toggle_show_ranking",
+              });
+            }}
+          >
+            Show rankings
+          </Box>
           <SimpleGrid columns={1} spacing={4}>
             {players.map((p, i) => (
               <Grid
@@ -289,8 +329,8 @@ export default function App() {
                         type: "select_player",
                         payload: {
                           player: p,
-                          index: i
-                        }
+                          index: i,
+                        },
                       });
                     }}
                   />
@@ -298,9 +338,30 @@ export default function App() {
                 <GridItem colSpan={3}>
                   <FormLabel htmlFor={`switch-${p.id}`}>{p.name}</FormLabel>
                 </GridItem>
-                <GridItem>
-                  <Input value={p.rank} onChange={() => {}} />
-                </GridItem>
+                {showRankings ? (
+                  <GridItem>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={p.rank}
+                      onChange={(e) => {
+                        dispatch({
+                          type: "update_player",
+                          payload: {
+                            id: p.id,
+                            rank: Number(e.target.value),
+                          },
+                        });
+                      }}
+                      onBlur={() => {
+                        db.collection("players").doc(p.id).update({
+                          rank: p.rank,
+                        });
+                      }}
+                    />
+                  </GridItem>
+                ) : null}
               </Grid>
             ))}
           </SimpleGrid>

@@ -37,16 +37,14 @@ const findPartner = (a, bs, minRankPercent, maxRankPercent) => {
 
 const quad = ([player, ...rest], min, max) => {
   const makeTeam = (team = [player]) => {
-    if (team.length === 4 || !player) {
+    const availablePartners = rest.filter((p) => !team.includes(p));
+
+    if (team.length === 4 || !player || !availablePartners.length) {
       return team;
     }
 
-    const partner = findPartner(
-      player,
-      rest.filter((p) => !team.includes(p)),
-      min,
-      max
-    );
+    const partner = findPartner(player, availablePartners, min, max);
+
     return rest.length ? makeTeam([...team, partner]) : [...team, partner];
   };
 
