@@ -21,6 +21,7 @@ import {
   Flex,
   Heading,
   Text,
+  Icon,
 } from "@chakra-ui/react";
 import { FaSeedling, FaSearch, FaTimesCircle } from "react-icons/fa";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -131,8 +132,8 @@ const AddPlayer = ({ type, onSubmit }) => {
   const [rank, setRank] = useState(0);
 
   return (
-    <Grid templateColumns="repeat(5, 1fr)" gap={2}>
-      <GridItem colSpan={2}>
+    <Grid templateColumns="repeat(11, 1fr)" gap={2}>
+      <GridItem colSpan={5}>
         <Input
           placeholder={`${type} name`}
           value={name}
@@ -140,7 +141,7 @@ const AddPlayer = ({ type, onSubmit }) => {
           background="white"
         />
       </GridItem>
-      <GridItem colSpan={2}>
+      <GridItem colSpan={5}>
         <Input
           placeholder={`${type} Rank`}
           type="number"
@@ -159,6 +160,7 @@ const AddPlayer = ({ type, onSubmit }) => {
             setName("");
             setRank(0);
           }}
+          width="100%"
         >
           +
         </Button>
@@ -208,7 +210,9 @@ export default function App() {
 
   return (
     <ChakraProvider>
-      <Box color="gray.500">{user ? <MainApp /> : <LogIn />}</Box>
+      <Box color="gray.500" maxWidth="900px" margin="0 auto">
+        {user ? <MainApp /> : <LogIn />}
+      </Box>
     </ChakraProvider>
   );
 }
@@ -217,7 +221,7 @@ const Logo = () => {
   return (
     <Stack spacing={2} textAlign="center">
       <Stack direction="row" spacing={2} alignItems="center">
-        <Box
+        <Icon
           as={FontAwesomeIcon}
           icon={faTennisBall}
           color="green.400"
@@ -314,7 +318,6 @@ function MainApp() {
   }, [players.length, dispatch]);
 
   const filteredPlayers = filterPlayers(filter, players);
-  const selectedPlayers = players.filter((p) => p.checked);
 
   return (
     <Stack spacing={4}>
@@ -386,7 +389,7 @@ function MainApp() {
                 padding={2}
                 borderBottom="1px solid"
                 borderColor="gray.300"
-                background="#ffdac1"
+                background="orange.100"
                 justifyContent="center"
                 borderTopRadius="5px"
               >
@@ -418,12 +421,16 @@ function MainApp() {
 
         <Stack
           spacing={4}
-          padding={2}
+          padding={4}
           paddingTop={4}
-          paddingBottom={4}
+          paddingBottom={8}
           background="green.300"
         >
-          <Grid templateColumns="repeat(5, 1fr)" color="white">
+          <Grid
+            templateColumns="repeat(5, 1fr)"
+            color="white"
+            fontWeight="bold"
+          >
             <GridItem colSpan={2}>Name</GridItem>
             <GridItem colSpan={2}>Rank</GridItem>
           </Grid>
@@ -488,7 +495,7 @@ function MainApp() {
           ) : null}
         </InputGroup>
       </Box>
-      <Stack>
+      <Stack padding={4}>
         <Button
           onClick={() => {
             dispatch({
