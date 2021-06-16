@@ -213,12 +213,9 @@ export default function App() {
   );
 }
 
-function LogIn() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
+const Logo = () => {
   return (
-    <Stack justifyContent="center" alignItems="center" height="100vh">
+    <Stack spacing={2} textAlign="center">
       <Stack direction="row" spacing={2} alignItems="center">
         <Box
           as={FontAwesomeIcon}
@@ -230,7 +227,18 @@ function LogIn() {
           Tennis.Social
         </Heading>
       </Stack>
-      <Text>Social matches made easy</Text>
+      <Text>Social sessions made easy</Text>
+    </Stack>
+  );
+};
+
+function LogIn() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  return (
+    <Stack justifyContent="center" alignItems="center" height="100vh">
+      <Logo />
       <Flex
         width="100%"
         justifyContent="center"
@@ -310,6 +318,9 @@ function MainApp() {
 
   return (
     <Stack spacing={4}>
+      <Flex padding={4} alignItems="center" justifyContent="center">
+        <Logo />
+      </Flex>
       <Stack spacing={8} padding={4} paddingBottom={0}>
         <Box>
           <Button
@@ -398,10 +409,12 @@ function MainApp() {
         ))}
       </Stack>
       <Stack>
-        <Heading size="md">Add new player</Heading>
-        <Text fontSize="sm">
-          (Guest players will not be saved for future sessions)
-        </Text>
+        <Box padding={4}>
+          <Heading size="md">Add new player</Heading>
+          <Text fontSize="sm">
+            (Guest players will not be saved for future sessions)
+          </Text>
+        </Box>
 
         <Stack
           spacing={4}
@@ -446,7 +459,6 @@ function MainApp() {
           />
         </Stack>
       </Stack>
-      <Box>Session player count: {selectedPlayers.length} </Box>
       <Box padding={4}>
         <InputGroup>
           <InputLeftElement
