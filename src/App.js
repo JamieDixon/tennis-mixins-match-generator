@@ -23,6 +23,8 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { FaSeedling, FaSearch, FaTimesCircle } from "react-icons/fa";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTennisBall } from "@fortawesome/pro-duotone-svg-icons";
 
 const db = firebase.firestore();
 
@@ -196,6 +198,91 @@ const filterPlayers = (filter, players) => {
 };
 
 export default function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    firebase.auth().onAuthStateChanged((user) => {
+      setUser(user);
+    });
+  }, []);
+
+  return (
+    <ChakraProvider>
+      <Box color="gray.500">{user ? <MainApp /> : <LogIn />}</Box>
+    </ChakraProvider>
+  );
+}
+
+function LogIn() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  return (
+    <Stack justifyContent="center" alignItems="center" height="100vh">
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Box
+          as={FontAwesomeIcon}
+          icon={faTennisBall}
+          color="green.400"
+          size="2x"
+        />
+        <Heading size="2xl" textTransform="uppercase">
+          Tennis.Social
+        </Heading>
+      </Stack>
+      <Text>Social matches made easy</Text>
+      <Flex
+        width="100%"
+        justifyContent="center"
+        alignItems="center"
+        padding={4}
+      >
+        <Stack
+          as="form"
+          spacing={4}
+          padding={4}
+          border="1px solid"
+          borderColor="gray.300"
+          borderRadius="7px"
+          width="100%"
+          onSubmit={(e) => {
+            e.preventDefault();
+            firebase
+              .auth()
+              .signInWithEmailAndPassword(username, password)
+              .catch((e) => {
+                console.log(e);
+              });
+          }}
+        >
+          <FormControl>
+            <Input
+              name="email"
+              placeholder="Email Address"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </FormControl>
+          <FormControl>
+            <Input
+              name="password"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </FormControl>
+          <FormControl>
+            <Button width="100%">Sign In</Button>
+          </FormControl>
+        </Stack>
+      </Flex>
+      <Text fontSize="xs">&copy; Jamie Dixon {new Date().getFullYear()}</Text>
+    </Stack>
+  );
+}
+
+function MainApp() {
   const [{ matches, players, showRankings, filter }, dispatch] =
     useStorageReducer(reducer, {
       players: [],
@@ -221,278 +308,279 @@ export default function App() {
   const selectedPlayers = players.filter((p) => p.checked);
 
   return (
-    <ChakraProvider>
-      <Box color="gray.500">
-        <div className="App">
-          <Stack spacing={4}>
-            <Stack spacing={8} padding={4} paddingBottom={0}>
-              <Box>
-                <Button
-                  width="100%"
-                  onClick={() => {
-                    const teams = makeTeams(shuffle(players), 1, 1);
-                    dispatch({
-                      type: "new_matches",
-                      payload: teams,
-                    });
+    <Stack spacing={4}>
+      <Stack spacing={8} padding={4} paddingBottom={0}>
+        <Box>
+          <Button
+            width="100%"
+            onClick={() => {
+              const teams = makeTeams(shuffle(players), 1, 1);
+              dispatch({
+                type: "new_matches",
+                payload: teams,
+              });
 
-                    saveMatchesHistory(teams);
-                  }}
-                >
-                  Organise equal matches
-                </Button>
-              </Box>
-              <Box>
-                <Button
-                  width="100%"
-                  onClick={() => {
-                    const teams = makeTeams(shuffle(players), 0.5, 0.5);
-                    dispatch({
-                      type: "new_matches",
-                      payload: teams,
-                    });
-                  }}
-                >
-                  Organise 50% leeway matches
-                </Button>
-              </Box>
-              <Box>
-                <Button
-                  width="100%"
-                  onClick={() => {
-                    const teams = makeTeams(
-                      [...players].sort((a, b) => b.rank - a.rank),
-                      0,
-                      1
-                    );
-                    dispatch({
-                      type: "new_matches",
-                      payload: teams,
-                    });
-                  }}
-                >
-                  Organise random matches
-                </Button>
-              </Box>
-            </Stack>
-            <Stack direction="column" spacing={4} padding={4} paddingTop={0}>
-              {matches.map((match, i) => (
-                <Box
-                  border="1px solid"
-                  borderColor="gray.300"
-                  borderRadius="5px"
-                  key={`match-${i}`}
-                  paddingBottom={4}
-                >
-                  <Stack spacing={4}>
-                    <Flex
-                      as="h3"
-                      padding={2}
-                      borderBottom="1px solid"
-                      borderColor="gray.300"
-                      background="#ffdac1"
-                      justifyContent="center"
-                      borderTopRadius="5px"
-                    >
-                      Group {i + 1}
-                    </Flex>
-                    <Stack alignItems="center">
-                      {match.map((player = {}, i) => (
-                        <Stack key={player.id} direction="row">
-                          {i === 0 ? (
-                            <Box as={FaSeedling} color="green.300" />
-                          ) : (
-                            <Box />
-                          )}
-                          <Box>{player.name}</Box>
-                        </Stack>
-                      ))}
-                    </Stack>
-                  </Stack>
-                </Box>
-              ))}
-            </Stack>
-            <Stack>
-              <Heading size="md">Add new player</Heading>
-              <Text fontSize="sm">
-                (Guest players will not be saved for future sessions)
-              </Text>
-
-              <Stack
-                spacing={4}
+              saveMatchesHistory(teams);
+            }}
+          >
+            Organise equal matches
+          </Button>
+        </Box>
+        <Box>
+          <Button
+            width="100%"
+            onClick={() => {
+              const teams = makeTeams(shuffle(players), 0.5, 0.5);
+              dispatch({
+                type: "new_matches",
+                payload: teams,
+              });
+            }}
+          >
+            Organise 50% leeway matches
+          </Button>
+        </Box>
+        <Box>
+          <Button
+            width="100%"
+            onClick={() => {
+              const teams = makeTeams(
+                [...players].sort((a, b) => b.rank - a.rank),
+                0,
+                1
+              );
+              dispatch({
+                type: "new_matches",
+                payload: teams,
+              });
+            }}
+          >
+            Organise random matches
+          </Button>
+        </Box>
+      </Stack>
+      <Stack direction="column" spacing={4} padding={4} paddingTop={0}>
+        {matches.map((match, i) => (
+          <Box
+            border="1px solid"
+            borderColor="gray.300"
+            borderRadius="5px"
+            key={`match-${i}`}
+            paddingBottom={4}
+          >
+            <Stack spacing={4}>
+              <Flex
+                as="h3"
                 padding={2}
-                paddingTop={4}
-                paddingBottom={4}
-                background="green.300"
+                borderBottom="1px solid"
+                borderColor="gray.300"
+                background="#ffdac1"
+                justifyContent="center"
+                borderTopRadius="5px"
               >
-                <Grid templateColumns="repeat(5, 1fr)" color="white">
-                  <GridItem colSpan={2}>Name</GridItem>
-                  <GridItem colSpan={2}>Rank</GridItem>
-                </Grid>
-                <AddPlayer
-                  type="Guest"
-                  onSubmit={(name, rank) => {
+                Group {i + 1}
+              </Flex>
+              <Stack alignItems="center">
+                {match.map((player = {}, i) => (
+                  <Stack key={player.id} direction="row">
+                    {i === 0 ? (
+                      <Box as={FaSeedling} color="green.300" />
+                    ) : (
+                      <Box />
+                    )}
+                    <Box>{player.name}</Box>
+                  </Stack>
+                ))}
+              </Stack>
+            </Stack>
+          </Box>
+        ))}
+      </Stack>
+      <Stack>
+        <Heading size="md">Add new player</Heading>
+        <Text fontSize="sm">
+          (Guest players will not be saved for future sessions)
+        </Text>
+
+        <Stack
+          spacing={4}
+          padding={2}
+          paddingTop={4}
+          paddingBottom={4}
+          background="green.300"
+        >
+          <Grid templateColumns="repeat(5, 1fr)" color="white">
+            <GridItem colSpan={2}>Name</GridItem>
+            <GridItem colSpan={2}>Rank</GridItem>
+          </Grid>
+          <AddPlayer
+            type="Guest"
+            onSubmit={(name, rank) => {
+              dispatch({
+                type: "add_player",
+                payload: {
+                  name: `${name} (Guest)`,
+                  rank,
+                  mode: "guest",
+                  id: randomId(),
+                },
+              });
+            }}
+          />
+          <AddPlayer
+            type="Member"
+            onSubmit={(name, rank) => {
+              db.collection("players")
+                .add({
+                  name,
+                  rank,
+                })
+                .then((snap) => {
+                  dispatch({
+                    type: "add_player",
+                    payload: { name: `${name}`, rank, id: snap.id },
+                  });
+                });
+            }}
+          />
+        </Stack>
+      </Stack>
+      <Box>Session player count: {selectedPlayers.length} </Box>
+      <Box padding={4}>
+        <InputGroup>
+          <InputLeftElement
+            pointerEvents="none"
+            children={<Box as={FaSearch} color="gray.300" />}
+          />
+          <Input
+            placeholder="Filter players"
+            value={filter}
+            onChange={(e) => {
+              dispatch({
+                type: "player_filter_type",
+                payload: e.target.value,
+              });
+            }}
+          />
+          {filter ? (
+            <InputRightElement
+              children={<Box as={FaTimesCircle} color="gray.300" />}
+              onClick={() => {
+                dispatch({
+                  type: "player_filter_type",
+                  payload: "",
+                });
+              }}
+            />
+          ) : null}
+        </InputGroup>
+      </Box>
+      <Stack>
+        <Button
+          onClick={() => {
+            dispatch({
+              type: "select_all_players",
+              payload: filteredPlayers,
+            });
+          }}
+        >
+          Select all ({filteredPlayers.length})
+        </Button>
+        <Button
+          onClick={() => {
+            dispatch({
+              type: "deselect_all_players",
+              payload: filteredPlayers,
+            });
+          }}
+        >
+          Deselect all ({filteredPlayers.filter((p) => p.checked).length})
+        </Button>
+      </Stack>
+      <SimpleGrid columns={1} spacing={4}>
+        {filteredPlayers.map((p, i) => (
+          <Grid
+            key={p.id}
+            as={FormControl}
+            templateColumns="repeat(5, 1fr)"
+            gap={2}
+            padding={2}
+            _hover={{ backgroundColor: "gray.100" }}
+          >
+            <GridItem colSpan={1}>
+              <Switch
+                id={`switch-${p.id}`}
+                isChecked={p.checked || false}
+                size="lg"
+                onChange={() => {
+                  dispatch({
+                    type: "select_player",
+                    payload: {
+                      player: p,
+                      index: i,
+                    },
+                  });
+                }}
+              />
+            </GridItem>
+            <GridItem colSpan={3}>
+              <FormLabel htmlFor={`switch-${p.id}`}>{p.name}</FormLabel>
+            </GridItem>
+            {showRankings ? (
+              <GridItem>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={p.rank}
+                  onChange={(e) => {
                     dispatch({
-                      type: "add_player",
+                      type: "update_player",
                       payload: {
-                        name: `${name} (Guest)`,
-                        rank,
-                        mode: "guest",
-                        id: randomId(),
+                        id: p.id,
+                        rank: Number(e.target.value),
                       },
                     });
                   }}
-                />
-                <AddPlayer
-                  type="Member"
-                  onSubmit={(name, rank) => {
-                    db.collection("players")
-                      .add({
-                        name,
-                        rank,
-                      })
-                      .then((snap) => {
-                        dispatch({
-                          type: "add_player",
-                          payload: { name: `${name}`, rank, id: snap.id },
-                        });
-                      });
-                  }}
-                />
-              </Stack>
-            </Stack>
-            <Box>Session player count: {selectedPlayers.length} </Box>
-            <Box padding={4}>
-              <InputGroup>
-                <InputLeftElement
-                  pointerEvents="none"
-                  children={<Box as={FaSearch} color="gray.300" />}
-                />
-                <Input
-                  placeholder="Filter players"
-                  value={filter}
-                  onChange={(e) => {
-                    dispatch({
-                      type: "player_filter_type",
-                      payload: e.target.value,
+                  onBlur={() => {
+                    db.collection("players").doc(p.id).update({
+                      rank: p.rank,
                     });
                   }}
                 />
-                {filter ? (
-                  <InputRightElement
-                    children={<Box as={FaTimesCircle} color="gray.300" />}
-                    onClick={() => {
-                      dispatch({
-                        type: "player_filter_type",
-                        payload: "",
-                      });
-                    }}
-                  />
-                ) : null}
-              </InputGroup>
-            </Box>
-            <Stack>
-              <Button
-                onClick={() => {
-                  dispatch({
-                    type: "select_all_players",
-                    payload: filteredPlayers,
-                  });
-                }}
-              >
-                Select all ({filteredPlayers.length})
-              </Button>
-              <Button
-                onClick={() => {
-                  dispatch({
-                    type: "deselect_all_players",
-                    payload: filteredPlayers,
-                  });
-                }}
-              >
-                Deselect all ({filteredPlayers.filter((p) => p.checked).length})
-              </Button>
-            </Stack>
-            <SimpleGrid columns={1} spacing={4}>
-              {filteredPlayers.map((p, i) => (
-                <Grid
-                  key={p.id}
-                  as={FormControl}
-                  templateColumns="repeat(5, 1fr)"
-                  gap={2}
-                  padding={2}
-                  _hover={{ backgroundColor: "gray.100" }}
-                >
-                  <GridItem colSpan={1}>
-                    <Switch
-                      id={`switch-${p.id}`}
-                      isChecked={p.checked || false}
-                      size="lg"
-                      onChange={() => {
-                        dispatch({
-                          type: "select_player",
-                          payload: {
-                            player: p,
-                            index: i,
-                          },
-                        });
-                      }}
-                    />
-                  </GridItem>
-                  <GridItem colSpan={3}>
-                    <FormLabel htmlFor={`switch-${p.id}`}>{p.name}</FormLabel>
-                  </GridItem>
-                  {showRankings ? (
-                    <GridItem>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        value={p.rank}
-                        onChange={(e) => {
-                          dispatch({
-                            type: "update_player",
-                            payload: {
-                              id: p.id,
-                              rank: Number(e.target.value),
-                            },
-                          });
-                        }}
-                        onBlur={() => {
-                          db.collection("players").doc(p.id).update({
-                            rank: p.rank,
-                          });
-                        }}
-                      />
-                    </GridItem>
-                  ) : null}
-                </Grid>
-              ))}
-            </SimpleGrid>
-            <Button
-              onClick={() => {
-                getPlayers().then((players) => {
-                  dispatch({
-                    type: "players_loaded",
-                    payload: players,
-                  });
-                });
-              }}
-            >
-              Reset Players
-            </Button>
-            <Box
-              onClick={() => {
-                dispatch({
-                  type: "toggle_show_ranking",
-                });
-              }}
-            >
-              Show rankings
-            </Box>
-          </Stack>
-        </div>
-      </Box>
-    </ChakraProvider>
+              </GridItem>
+            ) : null}
+          </Grid>
+        ))}
+      </SimpleGrid>
+      <Button
+        onClick={() => {
+          getPlayers().then((players) => {
+            dispatch({
+              type: "players_loaded",
+              payload: players,
+            });
+          });
+        }}
+      >
+        Reset Players
+      </Button>
+      <Button
+        onClick={() => {
+          dispatch({
+            type: "toggle_show_ranking",
+          });
+        }}
+      >
+        {showRankings ? "Hide" : "Show"} rankings
+      </Button>
+      <Button
+        onClick={() => {
+          firebase.auth().signOut();
+        }}
+      >
+        Log Out
+      </Button>
+    </Stack>
   );
 }

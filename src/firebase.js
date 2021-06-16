@@ -1,5 +1,6 @@
 import firebase from "firebase/app";
 import "firebase/firestore";
+import "firebase/auth";
 // import "firebase/analytics";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -10,7 +11,7 @@ var firebaseConfig = {
   storageBucket: "mix-in-517bd.appspot.com",
   messagingSenderId: "821202724937",
   appId: "1:821202724937:web:64357ca0d64ebaa3903798",
-  measurementId: "G-964GSF96N0"
+  measurementId: "G-964GSF96N0",
 };
 
 if (firebase.apps.length < 1) {
