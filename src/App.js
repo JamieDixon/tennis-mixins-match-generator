@@ -224,7 +224,7 @@ const Logo = () => {
         <Icon
           as={FontAwesomeIcon}
           icon={faTennisBall}
-          color="green.400"
+          color="green.300"
           size="2x"
         />
         <Heading size="2xl" textTransform="uppercase">
