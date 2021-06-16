@@ -258,6 +258,7 @@ function LogIn() {
           <FormControl>
             <Input
               name="email"
+              type="email"
               placeholder="Email Address"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
