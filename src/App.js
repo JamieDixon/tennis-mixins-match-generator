@@ -329,6 +329,26 @@ function MainApp() {
           <Button
             width="100%"
             onClick={() => {
+              const teams = makeTeams(
+                [...players].sort((a, b) => b.rank - a.rank),
+                1,
+                1
+              );
+              dispatch({
+                type: "new_matches",
+                payload: teams,
+              });
+
+              saveMatchesHistory(teams);
+            }}
+          >
+            Organise absolute best matches
+          </Button>
+        </Box>
+        <Box>
+          <Button
+            width="100%"
+            onClick={() => {
               const teams = makeTeams(shuffle(players), 1, 1);
               dispatch({
                 type: "new_matches",
@@ -359,11 +379,7 @@ function MainApp() {
           <Button
             width="100%"
             onClick={() => {
-              const teams = makeTeams(
-                [...players].sort((a, b) => b.rank - a.rank),
-                0,
-                1
-              );
+              const teams = makeTeams(shuffle(players), 0, 1);
               dispatch({
                 type: "new_matches",
                 payload: teams,
