@@ -22,6 +22,7 @@ import {
   Heading,
   Text,
   Icon,
+  Fade,
 } from "@chakra-ui/react";
 import { FaSeedling, FaSearch, FaTimesCircle } from "react-icons/fa";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -199,19 +200,61 @@ const filterPlayers = (filter, players) => {
   );
 };
 
+const Loading = ({ loading, children, minShowTime = 1000 }) => {
+  const [loaded, setLoaded] = useState(!loading);
+  const [then] = useState(Date.now());
+
+  useEffect(() => {
+    // Ensure that loading UI displays for at least minShowTime
+    // This prevents a janky loading experience.
+    const now = Date.now();
+    const elapsed = now - then;
+    const wait = minShowTime - elapsed;
+
+    const id = setTimeout(() => {
+      setLoaded(!loading);
+    }, wait);
+
+    return () => {
+      clearTimeout(id);
+    };
+  }, [loading]);
+
+  return (
+    <>
+      <Fade in={!loaded} unmountOnExit>
+        <Box position="absolute" top="0" left="0" bottom="0" right="0">
+          <Flex alignItems="center" justifyContent="center" height="100vh">
+            <Logo />
+          </Flex>
+        </Box>
+      </Fade>
+      <Fade in={loaded}>{children}</Fade>
+    </>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     firebase.auth().onAuthStateChanged((user) => {
       setUser(user);
+      setLoading(false);
     });
   }, []);
 
   return (
     <ChakraProvider>
-      <Box color="gray.500" maxWidth="900px" margin="0 auto">
-        {user ? <MainApp /> : <LogIn />}
+      <Box
+        color="gray.500"
+        maxWidth="900px"
+        margin="0 auto"
+        minHeight="100vh"
+        position="relative"
+      >
+        <Loading loading={loading}>{user ? <MainApp /> : <LogIn />}</Loading>
       </Box>
     </ChakraProvider>
   );
@@ -219,7 +262,7 @@ export default function App() {
 
 const Logo = () => {
   return (
-    <Stack spacing={2} textAlign="center">
+    <Stack spacing={2} textAlign="center" background="white">
       <Stack direction="row" spacing={2} alignItems="center">
         <Icon
           as={FontAwesomeIcon}
