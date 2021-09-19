@@ -65,14 +65,14 @@ export const makeTeams = (players, minThreshold = 1, maxThreshold = 1) => {
 };
 
 // Fisher-yates algorithm
-export function shuffle(array, rand = Math.random) {
+export function shuffle(array) {
   const arr = [...array];
 
   var m = arr.length,
     t,
     i;
   while (m) {
-    i = Math.floor(rand() * m--);
+    i = Math.floor(Math.random() * m--);
     t = arr[m];
     arr[m] = arr[i];
     arr[i] = t;
