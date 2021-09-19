@@ -462,9 +462,7 @@ function MainApp() {
                     ) : (
                       <Box />
                     )}
-                    <Box>
-                      {player.name} {player.rank}
-                    </Box>
+                    <Box>{player.name}</Box>
                   </Stack>
                 ))}
               </Stack>
