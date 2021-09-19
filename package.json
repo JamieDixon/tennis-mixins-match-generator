@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@babel/runtime": "7.13.8",
+    "jest-extended": "^0.11.5",
     "typescript": "4.1.3"
   },
   "scripts": {

@@ -374,8 +374,8 @@ function MainApp() {
             onClick={() => {
               const teams = makeTeams(
                 [...players].sort((a, b) => b.rank - a.rank),
-                1,
-                1
+                0,
+                0
               );
               dispatch({
                 type: "new_matches",
@@ -392,7 +392,7 @@ function MainApp() {
           <Button
             width="100%"
             onClick={() => {
-              const teams = makeTeams(shuffle(players), 1, 1);
+              const teams = makeTeams(shuffle(players), 0, 0);
               dispatch({
                 type: "new_matches",
                 payload: teams,
@@ -422,7 +422,7 @@ function MainApp() {
           <Button
             width="100%"
             onClick={() => {
-              const teams = makeTeams(shuffle(players), 0, 1);
+              const teams = makeTeams(shuffle(players), 9, 9);
               dispatch({
                 type: "new_matches",
                 payload: teams,
@@ -462,7 +462,9 @@ function MainApp() {
                     ) : (
                       <Box />
                     )}
-                    <Box>{player.name}</Box>
+                    <Box>
+                      {player.name} {player.rank}
+                    </Box>
                   </Stack>
                 ))}
               </Stack>

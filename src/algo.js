@@ -20,13 +20,17 @@ const findClosestPlayers = (a, bs) => {
   ).players;
 };
 
-const findPartner = (a, bs, minRankPercent, maxRankPercent) => {
-  const maxRank = a.rank * maxRankPercent;
-  const minRank = a.rank * minRankPercent;
+const round = (n) => Math.round(n * 10) / 10;
+
+export const findPartner = (a, bs, minRankPercent, maxRankPercent) => {
+  const rank = Number(a.rank);
+  const maxRank = round(rank + rank * maxRankPercent);
+  const minRank = round(rank - rank * minRankPercent);
 
   const allEligablePlayers = bs.filter(
     (player) => player.rank >= minRank && player.rank <= maxRank
   );
+
   const results =
     allEligablePlayers.length >= 1
       ? allEligablePlayers
@@ -51,7 +55,7 @@ const quad = ([player, ...rest], min, max) => {
   return makeTeam();
 };
 
-export const makeTeams = (players, minThreshold = 1, maxThreshold = 1) => {
+export const makeTeams = (players, minThreshold = 0, maxThreshold = 0) => {
   let mutPlayers = players.filter((p) => p.checked);
   let matches = [];
 
