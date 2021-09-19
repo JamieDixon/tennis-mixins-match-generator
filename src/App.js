@@ -462,7 +462,9 @@ function MainApp() {
                     ) : (
                       <Box />
                     )}
-                    <Box>{player.name}</Box>
+                    <Box>
+                      {player.name} {showRankings ? player.rank : ""}
+                    </Box>
                   </Stack>
                 ))}
               </Stack>
