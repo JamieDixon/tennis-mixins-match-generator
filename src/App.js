@@ -413,6 +413,8 @@ function MainApp() {
                 type: "new_matches",
                 payload: teams,
               });
+
+              saveMatchesHistory(teams);
             }}
           >
             Organise 50% leeway matches
@@ -427,6 +429,7 @@ function MainApp() {
                 type: "new_matches",
                 payload: teams,
               });
+              saveMatchesHistory(teams);
             }}
           >
             Organise random matches
