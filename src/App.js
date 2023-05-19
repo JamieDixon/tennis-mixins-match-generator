@@ -32,6 +32,15 @@ const db = firebase.firestore();
 
 const randomId = () => Math.random().toString(36).substr(2, 9);
 
+const group = (size, elements) => {
+  let res = [];
+  for (let i = 0; i <= elements.length - 1; i += size) {
+    res.push(elements.slice(i, i + size));
+  }
+
+  return res;
+};
+
 const Person = ({ p, showRankings, dispatch, i }) => {
   return (
     <Stack
@@ -422,9 +431,13 @@ function MainApp() {
     });
   }, [players.length, dispatch]);
 
+  const checkedPlayers = players.filter((p) => p.checked);
+
+  // All players with search filters applied
   const filteredPlayers = filterPlayers(filter, players);
 
-  const todaysPlayers = filteredPlayers.filter((p) => p.checked);
+  // Checked players with search filters applied
+  const todaysPlayers = filterPlayers(filter, checkedPlayers);
 
   return (
     <Stack spacing={4}>
@@ -456,7 +469,7 @@ function MainApp() {
           <Button
             width="100%"
             onClick={() => {
-              const teams = makeTeams(shuffle(players), 0, 0);
+              const teams = makeTeams(shuffle(checkedPlayers), 0, 0);
               dispatch({
                 type: "new_matches",
                 payload: teams,
@@ -472,7 +485,7 @@ function MainApp() {
           <Button
             width="100%"
             onClick={() => {
-              const teams = makeTeams(shuffle(players), 0.5, 0.5);
+              const teams = makeTeams(shuffle(checkedPlayers), 0.5, 0.5);
               dispatch({
                 type: "new_matches",
                 payload: teams,
@@ -488,7 +501,8 @@ function MainApp() {
           <Button
             width="100%"
             onClick={() => {
-              const teams = makeTeams(shuffle(players), 9, 9);
+              const teams = group(4, shuffle(checkedPlayers));
+
               dispatch({
                 type: "new_matches",
                 payload: teams,
