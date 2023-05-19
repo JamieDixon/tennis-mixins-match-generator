@@ -32,6 +32,68 @@ const db = firebase.firestore();
 
 const randomId = () => Math.random().toString(36).substr(2, 9);
 
+const Person = ({ p, showRankings, dispatch, i }) => {
+  return (
+    <Stack
+      key={p.id}
+      as={FormControl}
+      direction="row"
+      padding={2}
+      _hover={{ backgroundColor: "gray.100" }}
+      justifyContent="space-between"
+      alignItems="center"
+      spacing={4}
+    >
+      <Switch
+        id={`switch-${p.id}`}
+        width="fit-content"
+        isChecked={p.checked || false}
+        size="lg"
+        onChange={() => {
+          dispatch({
+            type: "select_player",
+            payload: {
+              player: p,
+              index: i,
+            },
+          });
+        }}
+      />
+      <FormLabel htmlFor={`switch-${p.id}`} flex={1}>
+        {p.name}
+      </FormLabel>
+      {showRankings ? (
+        <Box>
+          <Input
+            type="number"
+            step="0.1"
+            min="0"
+            max="1"
+            value={p.rank}
+            background="white"
+            onChange={(e) => {
+              dispatch({
+                type: "update_player",
+                payload: {
+                  id: p.id,
+                  rank: e.target.value,
+                },
+              });
+            }}
+            onBlur={() => {
+              db.collection("players")
+                .doc(p.id)
+                .update({
+                  rank: parseFloat(p.rank),
+                });
+            }}
+          />
+        </Box>
+      ) : null}
+    </Stack>
+  );
+};
+
 const reducer = produce((state, action) => {
   switch (action.type) {
     case "add_player": {
@@ -362,6 +424,8 @@ function MainApp() {
 
   const filteredPlayers = filterPlayers(filter, players);
 
+  const todaysPlayers = filteredPlayers.filter((p) => p.checked);
+
   return (
     <Stack spacing={4}>
       <Flex padding={4} alignItems="center" justifyContent="center">
@@ -578,65 +642,52 @@ function MainApp() {
             });
           }}
         >
-          Deselect all ({filteredPlayers.filter((p) => p.checked).length})
+          Deselect all ({todaysPlayers.length})
         </Button>
       </Stack>
-      <SimpleGrid columns={1} spacing={4}>
-        {filteredPlayers.map((p, i) => (
-          <Grid
-            key={p.id}
-            as={FormControl}
-            templateColumns="repeat(5, 1fr)"
-            gap={2}
-            padding={2}
-            _hover={{ backgroundColor: "gray.100" }}
-          >
-            <GridItem colSpan={1}>
-              <Switch
-                id={`switch-${p.id}`}
-                isChecked={p.checked || false}
-                size="lg"
-                onChange={() => {
-                  dispatch({
-                    type: "select_player",
-                    payload: {
-                      player: p,
-                      index: i,
-                    },
-                  });
-                }}
+      <Stack spacing={4}>
+        <Heading fontSize="md" padding={4}>
+          Today's players ({todaysPlayers.length})
+        </Heading>
+        <SimpleGrid
+          columns={1}
+          spacing={4}
+          background="green.100"
+          borderRadius="lg"
+          padding={2}
+        >
+          {todaysPlayers.length ? (
+            todaysPlayers.map((p, i) => (
+              <Person
+                p={p}
+                showRankings={showRankings}
+                key={`person_${i}`}
+                dispatch={dispatch}
+                i={i}
               />
-            </GridItem>
-            <GridItem colSpan={3}>
-              <FormLabel htmlFor={`switch-${p.id}`}>{p.name}</FormLabel>
-            </GridItem>
-            {showRankings ? (
-              <GridItem>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={p.rank}
-                  onChange={(e) => {
-                    dispatch({
-                      type: "update_player",
-                      payload: {
-                        id: p.id,
-                        rank: Number(e.target.value),
-                      },
-                    });
-                  }}
-                  onBlur={() => {
-                    db.collection("players").doc(p.id).update({
-                      rank: p.rank,
-                    });
-                  }}
-                />
-              </GridItem>
-            ) : null}
-          </Grid>
-        ))}
-      </SimpleGrid>
+            ))
+          ) : (
+            <Box>No players selected</Box>
+          )}
+        </SimpleGrid>
+      </Stack>
+
+      <Stack spacing={4}>
+        <Heading fontSize="md" padding={4}>
+          All players
+        </Heading>
+        <SimpleGrid columns={1} spacing={4}>
+          {filteredPlayers.map((p, i) => (
+            <Person
+              p={p}
+              showRankings={showRankings}
+              key={`person_${i}`}
+              dispatch={dispatch}
+              i={i}
+            />
+          ))}
+        </SimpleGrid>
+      </Stack>
       <Button
         onClick={() => {
           getPlayers().then((players) => {
